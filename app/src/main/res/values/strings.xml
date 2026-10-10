@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">SpacerLogger</string>
+    <string name="start">Start</string>
+    <string name="pause">Pauza</string>
+    <string name="resume">Wznów</string>
+    <string name="stop">Stop</string>
+    <string name="history">Historia</string>
+    <string name="weight">Waga</string>
+    <string name="center">Centruj</string>
+    <string name="distance">Dystans</string>
+    <string name="time">Czas</string>
+    <string name="calories">Spalone kcal</string>
+    <string name="speed">Śr. prędkość</string>
+    <string name="weight_title">Twoja waga (kg)</string>
+    <string name="invalid_weight">Podaj wagę w zakresie 30–250 kg</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Anuluj</string>
+    <string name="close">Zamknij</string>
+    <string name="clear">Wyczyść</string>
+    <string name="no_history">Brak zapisanych spacerów</string>
+    <string name="saved">Spacer zapisany: %1$s</string>
+    <string name="too_short">Spacer zbyt krótki – nie zapisano</string>
+    <string name="enable_gps">Włącz GPS, aby rejestrować trasę</string>
+    <string name="need_location">Do rejestrowania trasy potrzebna jest dokładna lokalizacja</string>
+    <string name="notif_channel">Rejestrowanie spaceru</string>
+    <string name="notif_running">Spacer w toku</string>
+    <string name="notif_paused">Spacer wstrzymany</string>
+</resources>
