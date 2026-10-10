@@ -90,7 +90,7 @@ class TrackingService : Service() {
         val paused = Tracker.state == WalkState.PAUSED
         val text = String.format(
             Locale.getDefault(), "%.2f km · %s · %.0f kcal",
-            Tracker.distanceM / 1000.0, formatTime(Tracker.elapsedMs()), Tracker.calories
+            Tracker.distanceM / 1000.0, formatTime(Tracker.elapsedMs()), Tracker.caloriesNow()
         )
         val open = PendingIntent.getActivity(
             this, 0,
