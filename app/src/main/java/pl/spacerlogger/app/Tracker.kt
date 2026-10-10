@@ -20,10 +20,11 @@ object Tracker {
         private set
     var version = 0
         private set
-    var weightKg = 70.0
+    var profile = Profile()
 
     private var activeMs = 0L
     private var resumedAt = 0L
+    private var lastAt = 0L
     private var last: Location? = null
     private val listeners = LinkedHashSet<() -> Unit>()
 
@@ -36,6 +37,15 @@ object Tracker {
     }
 
     private fun now() = SystemClock.elapsedRealtime()
+
+    /** Kalorie z uwzględnieniem czasu od ostatniego punktu (np. postój liczony jak spoczynek). */
+    fun caloriesNow(): Double {
+        val l = last
+        if (state == WalkState.RUNNING && l != null) {
+            return calories + CalorieCalc.restPerMin(profile) * (now() - lastAt) / 60000.0
+        }
+        return calories
+    }
 
     fun elapsedMs(): Long =
         activeMs + if (state == WalkState.RUNNING) now() - resumedAt else 0L
@@ -54,6 +64,7 @@ object Tracker {
 
     fun pause() {
         if (state != WalkState.RUNNING) return
+        calories = caloriesNow()
         activeMs += now() - resumedAt
         last = null
         state = WalkState.PAUSED
@@ -84,6 +95,7 @@ object Tracker {
         val prev = last
         if (prev == null) {
             last = loc
+            lastAt = now()
             points.add(Pt(loc.latitude, loc.longitude))
             changed()
             return
@@ -96,11 +108,12 @@ object Tracker {
         if (v > 12.0) return                                   // nierealny „skok" pozycji
 
         distanceM += d
-        calories += CalorieCalc.kcal(v * 3.6, weightKg, dt)
+        calories += CalorieCalc.segmentKcal(profile, v * 3.6, dt, elapsedMs() / 60000.0)
         last = loc
+        lastAt = now()
         points.add(Pt(loc.latitude, loc.longitude))
         changed()
     }
 
-    fun snapshot() = Walk(startedAt, elapsedMs(), distanceM, calories, ArrayList(points))
+    fun snapshot() = Walk(startedAt, elapsedMs(), distanceM, caloriesNow(), ArrayList(points))
 }
