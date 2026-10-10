@@ -11,7 +11,13 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.text.InputType
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
+import android.widget.RadioGroup
+import android.widget.Spinner
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -109,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         map.overlays.add(track)
         map.overlays.add(myLoc)
 
-        Tracker.weightKg = getSharedPreferences("settings", MODE_PRIVATE).getFloat("weight", 70f).toDouble()
+        Tracker.profile = ProfileStore.load(this)
 
         btnStart.setOnClickListener {
             when (Tracker.state) {
@@ -120,7 +126,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnStop.setOnClickListener { stopWalk() }
         findViewById<MaterialButton>(R.id.btnHistory).setOnClickListener { showHistory() }
-        findViewById<MaterialButton>(R.id.btnWeight).setOnClickListener { showWeightDialog() }
+        findViewById<MaterialButton>(R.id.btnWeight).setOnClickListener { showProfileDialog() }
         findViewById<MaterialButton>(R.id.btnCenter).setOnClickListener {
             if (hasFine()) { enableMyLocation(); myLoc.enableFollowLocation() }
         }
@@ -217,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         val ms = Tracker.elapsedMs()
         tvDistance.text = String.format(Locale.getDefault(), "%.2f km", d / 1000.0)
         tvTime.text = formatTime(ms)
-        tvCalories.text = String.format(Locale.getDefault(), "%.0f kcal", Tracker.calories)
+        tvCalories.text = String.format(Locale.getDefault(), "%.0f kcal", Tracker.caloriesNow())
         val hours = ms / 3_600_000.0
         tvSpeed.text = String.format(
             Locale.getDefault(), "%.1f km/h", if (hours > 0 && d > 0) d / 1000.0 / hours else 0.0
@@ -266,25 +272,79 @@ class MainActivity : AppCompatActivity() {
         map.invalidate()
     }
 
-    private fun showWeightDialog() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-            setText(String.format(Locale.US, "%.1f", Tracker.weightKg))
+    private fun showProfileDialog() {
+        val v = layoutInflater.inflate(R.layout.dialog_profile, null)
+        val etW = v.findViewById<EditText>(R.id.etWeight)
+        val etH = v.findViewById<EditText>(R.id.etHeight)
+        val etA = v.findViewById<EditText>(R.id.etAge)
+        val etD = v.findViewById<EditText>(R.id.etDaily)
+        val rg = v.findViewById<RadioGroup>(R.id.rgSex)
+        val sp = v.findViewById<Spinner>(R.id.spLifestyle)
+        val tvInfo = v.findViewById<TextView>(R.id.tvEnergy)
+
+        val p = Tracker.profile
+        etW.setText(String.format(Locale.US, "%.1f", p.weightKg))
+        etH.setText(String.format(Locale.US, "%.0f", p.heightCm))
+        etA.setText(p.age.toString())
+        etD.setText(p.dailyMinutes.toString())
+        rg.check(if (p.male) R.id.rbMale else R.id.rbFemale)
+        sp.adapter = ArrayAdapter(
+            this, android.R.layout.simple_spinner_dropdown_item,
+            resources.getStringArray(R.array.lifestyles)
+        )
+        sp.setSelection(p.lifestyle.coerceIn(0, 3))
+
+        fun read(): Profile? {
+            val w = etW.text.toString().replace(',', '.').toDoubleOrNull()
+            val h = etH.text.toString().replace(',', '.').toDoubleOrNull()
+            val a = etA.text.toString().toIntOrNull()
+            val d = etD.text.toString().toIntOrNull()
+            if (w == null || w !in 30.0..250.0) return null
+            if (h == null || h !in 100.0..230.0) return null
+            if (a == null || a !in 10..100) return null
+            if (d == null || d !in 0..600) return null
+            return Profile(w, h, a, rg.checkedRadioButtonId == R.id.rbMale, sp.selectedItemPosition, d)
         }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.weight_title)
-            .setView(input)
-            .setPositiveButton(R.string.ok) { _, _ ->
-                val v = input.text.toString().replace(',', '.').toDoubleOrNull()
-                if (v == null || v < 30 || v > 250) {
-                    toast(getString(R.string.invalid_weight))
+
+        fun refresh() {
+            val q = read()
+            tvInfo.text = if (q == null) "" else getString(
+                R.string.energy_info, CalorieCalc.bmr(q), CalorieCalc.tdee(q)
+            )
+        }
+
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(s: CharSequence?, st: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) = refresh()
+        }
+        listOf(etW, etH, etA, etD).forEach { it.addTextChangedListener(watcher) }
+        rg.setOnCheckedChangeListener { _, _ -> refresh() }
+        sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, pos: Int, id: Long) = refresh()
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        refresh()
+
+        val dlg = AlertDialog.Builder(this)
+            .setTitle(R.string.profile_title)
+            .setView(v)
+            .setPositiveButton(R.string.ok, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dlg.setOnShowListener {
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val q = read()
+                if (q == null) {
+                    toast(getString(R.string.invalid_profile))
                 } else {
-                    Tracker.weightKg = v
-                    getSharedPreferences("settings", MODE_PRIVATE).edit().putFloat("weight", v.toFloat()).apply()
+                    Tracker.profile = q
+                    ProfileStore.save(this, q)
+                    dlg.dismiss()
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+        }
+        dlg.show()
     }
 
     private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_LONG).show()
