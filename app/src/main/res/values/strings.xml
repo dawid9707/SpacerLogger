@@ -5,14 +5,12 @@
     <string name="resume">Wznów</string>
     <string name="stop">Stop</string>
     <string name="history">Historia</string>
-    <string name="weight">Waga</string>
+    <string name="profile">Profil</string>
     <string name="center">Centruj</string>
     <string name="distance">Dystans</string>
     <string name="time">Czas</string>
     <string name="calories">Spalone kcal</string>
     <string name="speed">Śr. prędkość</string>
-    <string name="weight_title">Twoja waga (kg)</string>
-    <string name="invalid_weight">Podaj wagę w zakresie 30–250 kg</string>
     <string name="ok">OK</string>
     <string name="cancel">Anuluj</string>
     <string name="close">Zamknij</string>
@@ -25,4 +23,20 @@
     <string name="notif_channel">Rejestrowanie spaceru</string>
     <string name="notif_running">Spacer w toku</string>
     <string name="notif_paused">Spacer wstrzymany</string>
+    <string name="profile_title">Twój profil</string>
+    <string name="hint_weight">Waga (kg)</string>
+    <string name="hint_height">Wzrost (cm)</string>
+    <string name="hint_age">Wiek (lata)</string>
+    <string name="hint_daily">Ruch dziennie (min, poza spacerami z aplikacji)</string>
+    <string name="sex_male">Mężczyzna</string>
+    <string name="sex_female">Kobieta</string>
+    <string name="lifestyle_label">Styl życia</string>
+    <string name="energy_info">Podstawowa przemiana (BMR): %1$.0f kcal/dzień\nSzacowane dzienne zapotrzebowanie: %2$.0f kcal</string>
+    <string name="invalid_profile">Sprawdź dane: waga 30–250 kg, wzrost 100–230 cm, wiek 10–100, ruch 0–600 min</string>
+    <string-array name="lifestyles">
+        <item>Siedzący (praca biurowa)</item>
+        <item>Lekko aktywny (praca na stojąco / w ruchu)</item>
+        <item>Aktywny (praca fizyczna)</item>
+        <item>Bardzo aktywny (ciężka praca fizyczna)</item>
+    </string-array>
 </resources>
